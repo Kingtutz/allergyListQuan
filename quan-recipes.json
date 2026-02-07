@@ -1,0 +1,182 @@
+[
+  {
+    "id": "galbi-sas",
+    "name": "Galbi sås",
+    "ingredients": ["vitlök 15 st", "vårlök 3 knippe", "ingefära 255g", "gullök 3 st", "koreanska päron 9 st", "rödpeppar 4 dl", "soya 3,3l", "sesamolja 6dl", "gochojang 4 dl", "honung 1,5 dl", "sesamfrö (orostade) 3 dl", "miso 1 dl", "kimchibase 3 dl", "risvinäger 2 dl"],
+    "instructions": "Mixa allt till konsistens. Kyl."
+  },
+  {
+    "id": "chili-majjonnas",
+    "name": "Chili majonnäs",
+    "ingredients": ["10l hellmans majonnäs", "111g vitlök", "167g ingefära", "111g sesamolja", "250g soya", "2000g sriracha", "2 stora burkar kondenseradmjölk", "33g salt", "166g risvinäger", "56g rajo", "380g yuzu"],
+    "instructions": "Mixa allt förutom sriracha och kondenseradmjölk slätt. Blanda ner allt i majonäsen. Fyll upp i spritspåsar."
+  },
+  {
+    "id": "tenso-sas",
+    "name": "Tenso sås",
+    "ingredients": ["5dl hondashi", "6,3l vatten", "1l mirin", "5dl saké", "2l soya", "2dl vinäger"],
+    "instructions": "Koka ihop allt och sen kyl ner i blastern."
+  },
+  {
+    "id": "rajo",
+    "name": "Rajo",
+    "ingredients": ["2l rödpeppar", "3l sesamolja", "10l soya"],
+    "instructions": "Lägg rödpepparn i ett djupt metallbläck. Koka upp sesamoljan till 167 grader och häll den över rödpepparn. Rör hela tiden och tillsätt soyan. Smaka upp med vitlök socker och mirin."
+  },
+  {
+    "id": "tonka-majjonnas",
+    "name": "Tonka majonnäs",
+    "ingredients": ["10l majonnäs", "300g ingefära", "11st solovitlökar 130g", "1,8l tonkatsu 1 flaska", "3dl sesamolja", "2dl soya"],
+    "instructions": "Mixa allt slätt. Tillsätt till majonäsen. Smaka upp med salt och peppar och få upp det i spritspåsar."
+  },
+  {
+    "id": "terreyaki",
+    "name": "Teriyaki",
+    "ingredients": ["10l soya", "10l socker", "10l vatten", "5kg rostat kyckling skrov", "200g vitlök", "200g ingefära", "1dl rödpeppar", "8 st gullökar"],
+    "instructions": "Koka upp och låt det koka i 1 timme. Kyl ner och sila bort allt."
+  },
+  {
+    "id": "vegan-chilimajonnas",
+    "name": "Vegan chili majonnäs",
+    "ingredients": ["25g vitlök", "27g ingefära", "45g sesamolja", "112g gochujang", "60g soya", "100g mirin", "65g socker", "1 st röd chili", "20g yuzu", "300g sriracha", "1 hink vegan majonnäs"],
+    "instructions": "Mixa allt slätt och blanda ner i majonäsen. Fyll upp i spritspåsar och markera att dom är veganska."
+  },
+  {
+    "id": "ponzu",
+    "name": "Ponzu",
+    "ingredients": ["3l soya", "6l vatten", "1l risvinäger", "100g hondashi", "200g socker", "1l mirin", "30g citronsyra", "340g råsaft citron"],
+    "instructions": "Blanda allt tills socker och citronsyra löst upp. Markera i condi och in i kyl."
+  },
+  {
+    "id": "vitloks-olja",
+    "name": "Vitlöks olja",
+    "ingredients": ["4,5l rapsolja", "6st vitlökar", "4st citroner"],
+    "instructions": "Mixa vitlöken med olja slätt. Zesta citronen och pressa ut juicen. Blanda ner i oljan."
+  },
+  {
+    "id": "korsbars-coulise",
+    "name": "Körsbärs coulise",
+    "ingredients": ["2,5kg körsbär", "2 burkar lyche (med vätskan)", "2dl vaniljsocker", "6dl socker", "1dl mixad söt ingefära"],
+    "instructions": "Blanda allt i en kastrull. Koka. Mixa. Kyl ner."
+  },
+  {
+    "id": "reddragon-bbqsas",
+    "name": "Red dragon BBQ sås",
+    "ingredients": ["3kg gochujang", "900g saké", "300g vinäger", "900g mirin", "300g soya", "1800g socker", "300g sesamolja", "9 lökar", "9 äpple", "9 vitlökar", "150g ingefära", "1,5l tonkatsu"],
+    "instructions": "Väg upp allt i den djup kastrull och koka upp. Mixa den slätt och markera i condi."
+  },
+  {
+    "id": "goma-dressing",
+    "name": "Goma dressing",
+    "ingredients": ["5l rostade vita sesamfrö", "5l soya", "2,5l socker", "2,5l risvinäger", "10l majonnäs", "1l sesamolja"],
+    "instructions": "Mixa soya och sesamfrö. Mixa vinäger, socker och sesamolja. Blanda ner i majonäsen."
+  },
+  {
+    "id": "cheesecake",
+    "name": "Cheesecake",
+    "ingredients": ["1kg philadelphia", "500g socker", "250g vit choklad", "500g grekisk yoghurt", "900g creme fraîche", "100g maizenamjöl", "4 tonkabönor", "10 ägg gulor", "4 msk vaniljsocker"],
+    "instructions": "Bunke 1: Blanda philadelphia och socker. Bunke 2: Smält vit choklad. Blanda ihop bunke 1 och 2. Bunke 3: Blanda grekisk yoghurt, creme fraîche, maizenamjöl, tonkabönor, ägg gulor, vaniljsocker. Blanda ihop allt och sila ner i formar. Baka i vattenbad på 185 grader i 25 min. Sänk sen ungnen till 148 och kör i 15 min."
+  },
+  {
+    "id": "brandy-cappuccino-nougat",
+    "name": "Brandy cappuccino - Nougat crème",
+    "ingredients": ["1kg nougat", "4 st espresso (150g)"],
+    "instructions": "Smält och blanda det slätt. Fyll i spritspåsar."
+  },
+  {
+    "id": "brandy-cappuccino-choklad",
+    "name": "Brandy cappuccino - Choklad crème",
+    "ingredients": ["1l grädde", "750g choklad", "60g smör", "200g jordnötter", "200g hasselnötter", "7cl hennessy", "salt"],
+    "instructions": "Koka upp grädden och vänd i choklad. Krossa nötterna och vänd sen ner i choklad smeten. Smaka upp med salt. Fyll spritspåsar."
+  },
+  {
+    "id": "mjolkskum",
+    "name": "Mjölkskum",
+    "ingredients": ["2,5dl mjölk", "2dl grädde", "1 tsk vaniljsocker"],
+    "instructions": "Blanda allt. Häll över i sifonen. Ladda med en patron."
+  },
+  {
+    "id": "sesam-tryffel",
+    "name": "Sesam Tryffel",
+    "ingredients": ["2l grädde", "4dl sesamolja", "1,5 dl vaniljsocker", "2 nypor salt", "2,3kg choklad"],
+    "instructions": "Koka upp och vänd i chokladen. När chokladen är smält häll upp i ett bläck med bakplåtspapper och kyl ner. Dela i kuber och vänd i sesamfrö."
+  },
+  {
+    "id": "bao-brod",
+    "name": "BAO Bröd",
+    "ingredients": ["4l mjöl", "1l mjölk", "1l vatten", "10 påsar torrjäst", "5dl socker", "6 msk bakpulver", "15g salt", "5 msk bläckfiskbläck"],
+    "instructions": "1. Värm upp mjölk, vatten, bläck och socker till 37 grader. 2. Tillsätt torrjäst och låt stå i 10 min. 3. Blanda mjöl och bakpulver i en stor bunke rör runt så det blir luftigt. 4. Blanda ihop och arbeta degen tills den inte klibbar fast när man rör den. 5. Låt den jäsa i 45 min i ett djupt plastbläck som är spreyat med fettspray täck med en blött släng. 6. Väg upp bollar till 24g och rulla dom släta. 7. Ånga i 11 min. Låt dem svalna innan man lägger över dom i bläck."
+  },
+  {
+    "id": "kimchi",
+    "name": "Kimchi",
+    "ingredients": ["18 huvuden kinakål", "5st purjolökar", "2kg morot", "12dl fisksås", "3dl socker", "15st röda chilis", "8st äpple", "5st gula lökar", "20st vitlökar", "450g ingefära", "500g gochujang", "3dl rödpeppar per bläck"],
+    "instructions": "Skär ner kålen och tillsätt 4 nävar salt och massera kålen. Låt kålen saltas ut i 30 min och sen skölj den. Hacka ner purjolöken och tvätta den sen blanda ner den och moroten in kålen. Mixa allt. Sen blanda basen i kålen och lägg upp i djupabläck. Plasta och på med lock för att sen låta den stå ute i 48 timmar."
+  },
+  {
+    "id": "tempurasmet",
+    "name": "Tempura smet",
+    "ingredients": ["4l tempuramjöl", "2 msk tapioca", "1 msk bakpulver"],
+    "instructions": "Blanda allt torrt. Tillsätt vatten tills smeten får rätt konsistens. Markera i 1/3or. Till grönsaker: 2600g temp mjöl, 3120g vatten, 1300g kross is."
+  },
+  {
+    "id": "sushi-zu",
+    "name": "Sushi Zu",
+    "ingredients": ["20l risvinäger", "8kg socker", "2kg salt", "3st lime", "1 bit kombu"],
+    "instructions": "Blanda allt kallt och sen markera i condi."
+  },
+  {
+    "id": "bongroddar",
+    "name": "Böngroddar",
+    "ingredients": ["1kg böngroddar", "0,5 dl soya", "0,5 dl sesamolja"],
+    "instructions": "Ånga böngroddarna i 3 min. Spola dom kalla. Blanda i sesamolja och soya."
+  },
+  {
+    "id": "rodloks-pickles",
+    "name": "Rödlöks pickles",
+    "ingredients": ["10kg rödlök", "3l vinäger", "2l socker"],
+    "instructions": "Skiva löken med det minsta bladet. Blanda vinäger och socker i en bunke tills sockret löst upp sig. Häll det över rödlöken och blanda runt sen sätt in i kyl."
+  },
+  {
+    "id": "gurkpickels",
+    "name": "Gurk pickles",
+    "ingredients": ["5st gurkor", "2 msk sesamolja", "1 msk soya", "1 msk rödpeppar", "1 msk sesamfrö"],
+    "instructions": "Dela ner gurka i antingen kuber eller skivor. Häll över 1 näve salt och låt stå i 15 min. Skölj av gurkan. Blanda sesamolja soya rödpeppar och sesamfrö. Häll över gurkan."
+  },
+  {
+    "id": "rodloks-salsa",
+    "name": "Rödlöks salsa",
+    "ingredients": ["4kg tärnad rödlök", "3l risvinäger", "2l socker"],
+    "instructions": "Blanda allt i en kastrull. Koka i 30 min. Kyl ner i blastern."
+  },
+  {
+    "id": "shiitake",
+    "name": "Shiitake",
+    "ingredients": ["1 låda shiitake", "6dl mirin", "4dl soya"],
+    "instructions": "Dela svampen. Ånga i 5 min. Häll på soya och mirin. Kyl ner."
+  },
+  {
+    "id": "brulee",
+    "name": "Brulée 30 port",
+    "ingredients": ["3l smet", "10 msk te"],
+    "instructions": "Lägg teet i varmvatten. Värm upp brulée smeten i ett vatten bad töm sedan ut vattenbadet och häll upp smeten i kastrullen och tillsätt teet och värm upp till ca 72 graden och sen sila upp i formar. Kyl och låt stelna."
+  },
+  {
+    "id": "varloks-kimchi",
+    "name": "Vårlöks kimchi",
+    "ingredients": ["2 knippe vårlök", "kimchibase", "apelsin zest"],
+    "instructions": "Grovt dela vårlöken. Ånga i två min. Smaka upp i bunke med zest och kimchi base."
+  },
+  {
+    "id": "ponzu-askman",
+    "name": "Ponzu ala Askman",
+    "ingredients": ["soya", "yuzu", "ingefära", "vitlök", "röd chili"],
+    "instructions": "Hitta måtten och blanda."
+  },
+  {
+    "id": "tryffel-yuzu-mix",
+    "name": "Tryffel yuzu mix",
+    "ingredients": ["600ml yuzu", "35ml tryffel", "1 msk salt"],
+    "instructions": "Blanda allt."
+  }
+]

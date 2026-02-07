@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recipe & Allergy Manager</title>
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <h1>🍳 Recipe Manager</h1>
+        <p>Manage your recipes and filter by allergies</p>
+      </header>
+
+      <main>
+        <!-- Allergy Filter Section -->
+        <section class="filter-section">
+          <h2>Filter by Allergies/Ingredients</h2>
+          <div class="filter-controls">
+            <input
+              type="text"
+              id="allergyInput"
+              placeholder="Enter allergen or ingredient to exclude (e.g., peanuts, dairy, gluten)"
+            />
+            <button id="addAllergyBtn">Add Filter</button>
+          </div>
+          <div id="allergyTags" class="tag-container"></div>
+        </section>
+
+        <!-- Add Recipe Section -->
+        <section class="add-recipe-section">
+          <h2>Add New Recipe</h2>
+          <form id="recipeForm">
+            <input
+              type="text"
+              id="recipeName"
+              placeholder="Recipe name"
+              required
+            />
+            <textarea
+              id="recipeIngredients"
+              placeholder="Ingredients (comma separated, e.g., eggs, milk, flour, sugar)"
+              rows="3"
+              required
+            ></textarea>
+            <textarea
+              id="recipeInstructions"
+              placeholder="Instructions (optional)"
+              rows="4"
+            ></textarea>
+            <button type="submit">Add Recipe</button>
+          </form>
+        </section>
+
+        <!-- Recipe List Section -->
+        <section class="recipe-list-section">
+          <div class="recipe-header-bar">
+            <h2>My Recipes</h2>
+            <div class="export-import-buttons">
+              <button id="exportBtn" class="secondary-btn">
+                📥 Export Recipes
+              </button>
+              <button id="importBtn" class="secondary-btn">
+                📤 Import Recipes
+              </button>
+              <input
+                type="file"
+                id="fileInput"
+                accept=".json"
+                style="display: none"
+              />
+            </div>
+          </div>
+          <div id="recipeList" class="recipe-grid"></div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

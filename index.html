@@ -53,6 +53,35 @@
           </form>
         </section>
 
+        <!-- Add Dish Section -->
+        <section class="add-dish-section">
+          <h2>Create Dish from Recipes</h2>
+          <form id="dishForm">
+            <input
+              type="text"
+              id="dishName"
+              placeholder="Dish name (e.g., Korean BBQ Bao)"
+              required
+            />
+            <div class="recipe-selector">
+              <label>Select recipes for this dish:</label>
+              <div id="recipeCheckboxes" class="checkbox-grid"></div>
+            </div>
+            <textarea
+              id="dishNotes"
+              placeholder="Notes (optional)"
+              rows="2"
+            ></textarea>
+            <button type="submit">Create Dish</button>
+          </form>
+        </section>
+
+        <!-- Dish List Section -->
+        <section class="dish-list-section">
+          <h2>My Dishes</h2>
+          <div id="dishList" class="recipe-grid"></div>
+        </section>
+
         <!-- Recipe List Section -->
         <section class="recipe-list-section">
           <div class="recipe-header-bar">

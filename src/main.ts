@@ -1,5 +1,5 @@
 import './style.css'
-import { initFirebase, saveRecipesToFirebase, listenToRecipes } from './firebase'
+import { initFirebase, saveRecipesToFirebase, listenToRecipes, saveDishesToFirebase, listenToDishes } from './firebase'
 
 interface Recipe {
   id: string;
@@ -9,8 +9,16 @@ interface Recipe {
   allergies?: string[];
 }
 
+interface Dish {
+  id: string;
+  name: string;
+  recipeIds: string[];
+  notes?: string;
+}
+
 class RecipeManager {
   private recipes: Recipe[] = [];
+  private dishes: Dish[] = [];
   private allergyFilters: Set<string> = new Set();
   private useFirebase: boolean = false;
 
@@ -26,9 +34,9 @@ class RecipeManager {
     this.useFirebase = db !== null;
 
     if (this.useFirebase) {
-      console.log('🔥 Firebase connected! Syncing recipes...');
+      console.log('🔥 Firebase connected! Syncing recipes and dishes...');
       
-      // Listen for changes from Firebase
+      // Listen for recipe changes from Firebase
       listenToRecipes((firebaseRecipes) => {
         if (Array.isArray(firebaseRecipes) && firebaseRecipes.length > 0) {
           this.recipes = firebaseRecipes;
@@ -37,9 +45,21 @@ class RecipeManager {
         }
       });
 
-      // Upload current recipes if Firebase is empty
+      // Listen for dish changes from Firebase
+      listenToDishes((firebaseDishes) => {
+        if (Array.isArray(firebaseDishes) && firebaseDishes.length > 0) {
+          this.dishes = firebaseDishes;
+          this.saveToStorage(); // Also keep local backup
+          this.render();
+        }
+      });
+
+      // Upload current data if Firebase is empty
       if (this.recipes.length > 0) {
         saveRecipesToFirebase(this.recipes);
+      }
+      if (this.dishes.length > 0) {
+        saveDishesToFirebase(this.dishes);
       }
     } else {
       console.log('📦 Using localStorage only');
@@ -88,6 +108,13 @@ class RecipeManager {
         this.importRecipes(file);
       }
     });
+
+    // Dish form
+    const dishForm = document.getElementById('dishForm') as HTMLFormElement;
+    dishForm?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      this.addDish();
+    });
   }
 
   private addRecipe(): void {
@@ -123,6 +150,41 @@ class RecipeManager {
     instructionsInput.value = '';
   }
 
+  private addDish(): void {
+    const nameInput = document.getElementById('dishName') as HTMLInputElement;
+    const notesInput = document.getElementById('dishNotes') as HTMLTextAreaElement;
+    
+    const name = nameInput.value.trim();
+    const notes = notesInput.value.trim();
+
+    if (!name) return;
+
+    // Get selected recipes
+    const checkboxes = document.querySelectorAll<HTMLInputElement>('#recipeCheckboxes input[type="checkbox"]:checked');
+    const recipeIds = Array.from(checkboxes).map(cb => cb.value);
+
+    if (recipeIds.length === 0) {
+      alert('Please select at least one recipe for this dish');
+      return;
+    }
+
+    const dish: Dish = {
+      id: Date.now().toString(),
+      name,
+      recipeIds,
+      notes
+    };
+
+    this.dishes.push(dish);
+    this.saveToStorage();
+    this.render();
+
+    // Clear form
+    nameInput.value = '';
+    notesInput.value = '';
+    checkboxes.forEach(cb => (cb as HTMLInputElement).checked = false);
+  }
+
   private addAllergyFilter(): void {
     const input = document.getElementById('allergyInput') as HTMLInputElement;
     const allergen = input.value.trim().toLowerCase();
@@ -141,6 +203,12 @@ class RecipeManager {
 
   private deleteRecipe(id: string): void {
     this.recipes = this.recipes.filter(recipe => recipe.id !== id);
+    this.saveToStorage();
+    this.render();
+  }
+
+  private deleteDish(id: string): void {
+    this.dishes = this.dishes.filter(dish => dish.id !== id);
     this.saveToStorage();
     this.render();
   }
@@ -170,6 +238,16 @@ class RecipeManager {
     this.render();
   }
 
+  private dishContainsAllergen(dish: Dish): boolean {
+    if (this.allergyFilters.size === 0) return false;
+    
+    // Check if any recipe in the dish contains an allergen
+    return dish.recipeIds.some(recipeId => {
+      const recipe = this.recipes.find(r => r.id === recipeId);
+      return recipe ? this.containsAllergen(recipe) : false;
+    });
+  }
+
   private containsAllergen(recipe: Recipe): boolean {
     if (this.allergyFilters.size === 0) return false;
 
@@ -193,7 +271,9 @@ class RecipeManager {
 
   private render(): void {
     this.renderAllergyTags();
+    this.renderRecipeCheckboxes();
     this.renderRecipes();
+    this.renderDishes();
   }
 
   private renderAllergyTags(): void {
@@ -221,6 +301,28 @@ class RecipeManager {
       });
 
       container.appendChild(tag);
+    });
+  }
+
+  private renderRecipeCheckboxes(): void {
+    const container = document.getElementById('recipeCheckboxes');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (this.recipes.length === 0) {
+      container.innerHTML = '<p class="no-recipes-note">Add recipes first before creating dishes</p>';
+      return;
+    }
+
+    this.recipes.forEach(recipe => {
+      const label = document.createElement('label');
+      label.className = 'recipe-checkbox-label';
+      label.innerHTML = `
+        <input type="checkbox" value="${recipe.id}" />
+        <span>${recipe.name}</span>
+      `;
+      container.appendChild(label);
     });
   }
 
@@ -254,6 +356,97 @@ class RecipeManager {
       warning.textContent = '⚠️ All recipes are hidden due to allergy filters';
       container.prepend(warning);
     }
+  }
+
+  private renderDishes(): void {
+    const container = document.getElementById('dishList');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (this.dishes.length === 0) {
+      container.innerHTML = '<p class="no-recipes">No dishes yet. Create a dish from your recipes above!</p>';
+      return;
+    }
+
+    const safeDishes = this.dishes.filter(dish => !this.dishContainsAllergen(dish));
+    const hiddenDishes = this.dishes.filter(dish => this.dishContainsAllergen(dish));
+
+    // Show safe dishes
+    safeDishes.forEach(dish => {
+      container.appendChild(this.createDishCard(dish, false));
+    });
+
+    // Show hidden dishes (grayed out)
+    hiddenDishes.forEach(dish => {
+      container.appendChild(this.createDishCard(dish, true));
+    });
+
+    if (safeDishes.length === 0 && hiddenDishes.length > 0) {
+      const warning = document.createElement('p');
+      warning.className = 'warning';
+      warning.textContent = '⚠️ All dishes are hidden due to allergy filters';
+      container.prepend(warning);
+    }
+  }
+
+  private createDishCard(dish: Dish, isHidden: boolean): HTMLElement {
+    const card = document.createElement('div');
+    card.className = `recipe-card dish-card ${isHidden ? 'hidden-recipe' : ''}`;
+
+    const dishRecipes = dish.recipeIds
+      .map(id => this.recipes.find(r => r.id === id))
+      .filter(r => r !== undefined) as Recipe[];
+
+    const matchedAllergens = isHidden ? this.getDishMatchedAllergens(dish) : [];
+
+    card.innerHTML = `
+      <div class="recipe-header">
+        <h3>🍽️ ${dish.name}</h3>
+        <button class="delete-btn" data-id="${dish.id}">Delete</button>
+      </div>
+      ${isHidden ? `<div class="allergy-warning">⚠️ Contains: ${matchedAllergens.join(', ')}</div>` : ''}
+      
+      <div class="dish-recipes">
+        <strong>Recipes used:</strong>
+        <ul>
+          ${dishRecipes.map(recipe => {
+            const hasAllergen = this.containsAllergen(recipe);
+            return `<li class="${hasAllergen ? 'allergen-recipe' : ''}">${recipe.name}${hasAllergen ? ' ⚠️' : ''}</li>`;
+          }).join('')}
+        </ul>
+      </div>
+
+      ${dish.notes ? `
+        <div class="dish-notes">
+          <strong>Notes:</strong>
+          <p>${dish.notes}</p>
+        </div>
+      ` : ''}
+    `;
+
+    const deleteBtn = card.querySelector('.delete-btn');
+    deleteBtn?.addEventListener('click', () => {
+      if (confirm(`Delete dish "${dish.name}"?`)) {
+        this.deleteDish(dish.id);
+      }
+    });
+
+    return card;
+  }
+
+  private getDishMatchedAllergens(dish: Dish): string[] {
+    const matched: Set<string> = new Set();
+    
+    dish.recipeIds.forEach(recipeId => {
+      const recipe = this.recipes.find(r => r.id === recipeId);
+      if (recipe) {
+        const recipeAllergens = this.getMatchedAllergens(recipe);
+        recipeAllergens.forEach(a => matched.add(a));
+      }
+    });
+
+    return Array.from(matched);
   }
 
   private createRecipeCard(recipe: Recipe, isHidden: boolean): HTMLElement {
@@ -374,10 +567,12 @@ class RecipeManager {
 
   private saveToStorage(): void {
     localStorage.setItem('recipes', JSON.stringify(this.recipes));
+    localStorage.setItem('dishes', JSON.stringify(this.dishes));
     
     // Sync to Firebase if available
     if (this.useFirebase) {
       saveRecipesToFirebase(this.recipes);
+      saveDishesToFirebase(this.dishes);
     }
     
     this.showSaveIndicator();
@@ -390,6 +585,15 @@ class RecipeManager {
         this.recipes = JSON.parse(stored);
       } catch (e) {
         console.error('Failed to load recipes from storage', e);
+      }
+    }
+
+    const storedDishes = localStorage.getItem('dishes');
+    if (storedDishes) {
+      try {
+        this.dishes = JSON.parse(storedDishes);
+      } catch (e) {
+        console.error('Failed to load dishes from storage', e);
       }
     }
   }

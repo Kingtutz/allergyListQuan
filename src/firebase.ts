@@ -53,6 +53,27 @@ export function listenToRecipes(callback: (recipes: any[]) => void): void {
   });
 }
 
+export function saveDishesToFirebase(dishes: any[]): void {
+  if (!database) return;
+  
+  try {
+    const dishesRef = ref(database, 'dishes');
+    set(dishesRef, dishes);
+  } catch (error) {
+    console.error('Error saving dishes to Firebase:', error);
+  }
+}
+
+export function listenToDishes(callback: (dishes: any[]) => void): void {
+  if (!database) return;
+  
+  const dishesRef = ref(database, 'dishes');
+  onValue(dishesRef, (snapshot) => {
+    const data = snapshot.val();
+    callback(data || []);
+  });
+}
+
 export function getDatabase() {
   return database;
 }

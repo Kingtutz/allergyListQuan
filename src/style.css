@@ -329,6 +329,128 @@ h2 {
   margin-bottom: 15px;
 }
 
+/* Dish Sections */
+.add-dish-section {
+  background: #f0fff4;
+  border: 2px solid #9ae6b4;
+}
+
+.dish-list-section {
+  background: #f0fff4;
+}
+
+.recipe-selector {
+  margin: 15px 0;
+}
+
+.recipe-selector label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #667eea;
+}
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  border: 2px solid #e0e0e0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.recipe-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.recipe-checkbox-label:hover {
+  background: #f0f4ff;
+}
+
+.recipe-checkbox-label input[type="checkbox"] {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+.recipe-checkbox-label span {
+  font-size: 0.9rem;
+}
+
+.no-recipes-note {
+  color: #999;
+  font-style: italic;
+  padding: 20px;
+  text-align: center;
+}
+
+/* Dish Cards */
+.dish-card {
+  border-left: 4px solid #48bb78;
+}
+
+.dish-recipes {
+  margin-bottom: 15px;
+  background: #f7fafc;
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.dish-recipes strong {
+  color: #48bb78;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.dish-recipes ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.dish-recipes li {
+  padding: 4px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.dish-recipes li:before {
+  content: "→";
+  color: #48bb78;
+  font-weight: bold;
+  position: absolute;
+  left: 5px;
+}
+
+.dish-recipes li.allergen-recipe {
+  color: #c62828;
+  font-weight: 600;
+}
+
+.dish-notes {
+  margin-bottom: 15px;
+}
+
+.dish-notes strong {
+  color: #48bb78;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.dish-notes p {
+  line-height: 1.6;
+  color: #555;
+  font-style: italic;
+}
+
 .recipe-ingredients strong,
 .recipe-instructions strong {
   color: #667eea;
@@ -494,5 +616,9 @@ h2 {
 
   .export-import-buttons {
     flex-direction: column;
+  }
+
+  .checkbox-grid {
+    grid-template-columns: 1fr;
   }
 }

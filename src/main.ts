@@ -25,6 +25,7 @@ interface Dish {
 class RecipeManager {
   private recipes: Recipe[] = [];
   private dishes: Dish[] = [];
+  private masterIngredients: string[] = [];
   private allergyFilters: Set<string> = new Set();
   private useFirebase: boolean = false;
   private isAuthenticated: boolean = false;
@@ -203,6 +204,21 @@ class RecipeManager {
       }
     });
 
+    // Ingredient manager
+    const addIngredientBtn = document.getElementById('addIngredientBtn');
+    const newIngredientInput = document.getElementById('newIngredientInput') as HTMLInputElement;
+    
+    addIngredientBtn?.addEventListener('click', () => {
+      this.addMasterIngredient();
+    });
+
+    newIngredientInput?.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.addMasterIngredient();
+      }
+    });
+
     // Collapse buttons
     document.querySelectorAll('.collapse-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -253,17 +269,31 @@ class RecipeManager {
     const ingredientsText = ingredientsInput.value.trim();
     const instructions = instructionsInput.value.trim();
 
-    if (!name || !ingredientsText) return;
+    if (!name) return;
 
-    const ingredients = ingredientsText
+    // Get selected ingredients from checkboxes
+    const selectedIngredients = Array.from(
+      document.querySelectorAll<HTMLInputElement>('#ingredientCheckboxes input[type="checkbox"]:checked')
+    ).map(cb => cb.value.toLowerCase());
+
+    // Get manual ingredients from textarea
+    const manualIngredients = ingredientsText
       .split(',')
       .map(ing => ing.trim().toLowerCase())
       .filter(ing => ing.length > 0);
 
+    // Combine both sources
+    const allIngredients = [...new Set([...selectedIngredients, ...manualIngredients])];
+
+    if (allIngredients.length === 0) {
+      alert('Please select or enter at least one ingredient');
+      return;
+    }
+
     const recipe: Recipe = {
       id: Date.now().toString(),
       name,
-      ingredients,
+      ingredients: allIngredients,
       instructions
     };
 
@@ -275,6 +305,29 @@ class RecipeManager {
     nameInput.value = '';
     ingredientsInput.value = '';
     instructionsInput.value = '';
+    // Uncheck all ingredient checkboxes
+    document.querySelectorAll<HTMLInputElement>('#ingredientCheckboxes input[type="checkbox"]').forEach(cb => {
+      cb.checked = false;
+    });
+  }
+
+  private addMasterIngredient(): void {
+    const input = document.getElementById('newIngredientInput') as HTMLInputElement;
+    const ingredient = input.value.trim().toLowerCase();
+
+    if (ingredient && !this.masterIngredients.includes(ingredient)) {
+      this.masterIngredients.push(ingredient);
+      this.masterIngredients.sort();
+      this.saveToStorage();
+      input.value = '';
+      this.render();
+    }
+  }
+
+  private removeMasterIngredient(ingredient: string): void {
+    this.masterIngredients = this.masterIngredients.filter(i => i !== ingredient);
+    this.saveToStorage();
+    this.render();
   }
 
   private async addDish(): Promise<void> {
@@ -419,10 +472,62 @@ class RecipeManager {
 
   private render(): void {
     this.renderAllergyTags();
+    this.renderMasterIngredients();
+    this.renderIngredientCheckboxes();
     this.renderRecipeCheckboxes();
     this.renderRecipes();
     this.renderDishes();
     this.updateUIForAccessLevel();
+  }
+
+  private renderMasterIngredients(): void {
+    const container = document.getElementById('masterIngredients');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (this.masterIngredients.length === 0) {
+      container.innerHTML = '<p class="no-ingredients">No ingredients yet. Add ingredients to build your master list!</p>';
+      return;
+    }
+
+    this.masterIngredients.forEach(ingredient => {
+      const tag = document.createElement('div');
+      tag.className = 'ingredient-tag';
+      tag.innerHTML = `
+        <span>${ingredient}</span>
+        <button class="remove-ingredient-tag" data-ingredient="${ingredient}">×</button>
+      `;
+      
+      const removeBtn = tag.querySelector('.remove-ingredient-tag');
+      removeBtn?.addEventListener('click', () => {
+        this.removeMasterIngredient(ingredient);
+      });
+
+      container.appendChild(tag);
+    });
+  }
+
+  private renderIngredientCheckboxes(): void {
+    const container = document.getElementById('ingredientCheckboxes');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (this.masterIngredients.length === 0) {
+      container.innerHTML = '<p class="no-ingredients-note">Add ingredients to master list first</p>';
+      return;
+    }
+
+    this.masterIngredients.forEach(ingredient => {
+      const label = document.createElement('label');
+      label.className = 'ingredient-checkbox-label';
+      label.innerHTML = `
+        <input type="checkbox" value="${ingredient}" />
+        <span>${ingredient}</span>
+      `;
+      container.appendChild(label);
+    });
   }
 
   private updateUIForAccessLevel(): void {
@@ -433,11 +538,13 @@ class RecipeManager {
     const dishForm = document.getElementById('dishForm')?.parentElement;
     const exportImportBtns = document.querySelector('.export-import-buttons');
     const recipeSection = document.querySelector('.recipe-list-section');
+    const ingredientSection = document.querySelector('.ingredient-manager-section');
     
     if (recipeForm) recipeForm.style.display = isReadOnly ? 'none' : 'block';
     if (dishForm) dishForm.style.display = isReadOnly ? 'none' : 'block';
     if (exportImportBtns) (exportImportBtns as HTMLElement).style.display = isReadOnly ? 'none' : 'flex';
     if (recipeSection) (recipeSection as HTMLElement).style.display = isReadOnly ? 'none' : 'block';
+    if (ingredientSection) (ingredientSection as HTMLElement).style.display = isReadOnly ? 'none' : 'block';
     
     // Update logout button text
     const logoutBtn = document.getElementById('logoutBtn');
@@ -744,6 +851,7 @@ class RecipeManager {
   private saveToStorage(): void {
     localStorage.setItem('recipes', JSON.stringify(this.recipes));
     localStorage.setItem('dishes', JSON.stringify(this.dishes));
+    localStorage.setItem('masterIngredients', JSON.stringify(this.masterIngredients));
     
     // Sync to Firebase if available
     if (this.useFirebase) {
@@ -770,6 +878,15 @@ class RecipeManager {
         this.dishes = JSON.parse(storedDishes);
       } catch (e) {
         console.error('Failed to load dishes from storage', e);
+      }
+    }
+
+    const storedIngredients = localStorage.getItem('masterIngredients');
+    if (storedIngredients) {
+      try {
+        this.masterIngredients = JSON.parse(storedIngredients);
+      } catch (e) {
+        console.error('Failed to load master ingredients from storage', e);
       }
     }
   }

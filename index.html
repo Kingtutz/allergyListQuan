@@ -55,6 +55,27 @@
           <div id="allergyTags" class="tag-container"></div>
         </section>
 
+        <!-- Ingredient Manager Section -->
+        <section class="ingredient-manager-section">
+          <div class="collapsible-header">
+            <h2>Master Ingredient List</h2>
+            <button class="collapse-btn" data-target="ingredientManager">
+              ▼
+            </button>
+          </div>
+          <div id="ingredientManager" class="collapsible-content">
+            <div class="ingredient-controls">
+              <input
+                type="text"
+                id="newIngredientInput"
+                placeholder="Add ingredient to master list (e.g., soya, vitlök, mirin)"
+              />
+              <button id="addIngredientBtn">Add Ingredient</button>
+            </div>
+            <div id="masterIngredients" class="ingredient-grid"></div>
+          </div>
+        </section>
+
         <!-- Add Recipe Section -->
         <section class="add-recipe-section">
           <h2>Add New Recipe</h2>
@@ -65,11 +86,14 @@
               placeholder="Recipe name"
               required
             />
+            <div class="ingredient-selector-section">
+              <label>Select from master list:</label>
+              <div id="ingredientCheckboxes" class="checkbox-grid"></div>
+            </div>
             <textarea
               id="recipeIngredients"
-              placeholder="Ingredients (comma separated, e.g., eggs, milk, flour, sugar)"
+              placeholder="Or type additional ingredients (comma separated)"
               rows="3"
-              required
             ></textarea>
             <textarea
               id="recipeInstructions"

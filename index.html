@@ -7,10 +7,37 @@
     <title>Recipe & Allergy Manager</title>
   </head>
   <body>
-    <div id="app">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+      <div class="login-box">
+        <h1>🔒 Recipe Manager</h1>
+        <p>Enter password to access</p>
+        <form id="loginForm">
+          <input
+            type="password"
+            id="loginPassword"
+            placeholder="Enter password"
+            required
+            autofocus
+          />
+          <button type="submit">Login</button>
+        </form>
+        <p id="loginError" class="login-error" style="display: none">
+          Incorrect password
+        </p>
+      </div>
+    </div>
+
+    <!-- Main App (hidden until authenticated) -->
+    <div id="app" style="display: none">
       <header>
-        <h1>🍳 Recipe Manager</h1>
-        <p>Manage your recipes and filter by allergies</p>
+        <div class="header-content">
+          <div>
+            <h1>🍳 Recipe Manager</h1>
+            <p>Manage your recipes and filter by allergies</p>
+          </div>
+          <button id="logoutBtn" class="logout-btn">Logout</button>
+        </div>
       </header>
 
       <main>
@@ -78,14 +105,20 @@
 
         <!-- Dish List Section -->
         <section class="dish-list-section">
-          <h2>My Dishes</h2>
-          <div id="dishList" class="recipe-grid"></div>
+          <div class="collapsible-header">
+            <h2>My Dishes</h2>
+            <button class="collapse-btn" data-target="dishList">▼</button>
+          </div>
+          <div id="dishList" class="recipe-grid collapsible-content"></div>
         </section>
 
         <!-- Recipe List Section -->
         <section class="recipe-list-section">
           <div class="recipe-header-bar">
-            <h2>My Recipes</h2>
+            <div class="collapsible-header">
+              <h2>My Recipes</h2>
+              <button class="collapse-btn" data-target="recipeList">▼</button>
+            </div>
             <div class="export-import-buttons">
               <button id="exportBtn" class="secondary-btn">
                 📥 Export Recipes
@@ -101,7 +134,7 @@
               />
             </div>
           </div>
-          <div id="recipeList" class="recipe-grid"></div>
+          <div id="recipeList" class="recipe-grid collapsible-content"></div>
         </section>
       </main>
     </div>

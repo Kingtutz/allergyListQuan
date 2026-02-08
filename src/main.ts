@@ -29,9 +29,65 @@ class RecipeManager {
   constructor() {
     this.loadFromStorage();
     this.checkAuthentication();
-    this.initializeFirebase();
-    this.setupEventListeners();
-    this.render();
+    this.setupLoginForm();
+    
+    // Only initialize app if already authenticated
+    if (this.isAuthenticated) {
+      this.showApp();
+      this.initializeFirebase();
+      this.setupEventListeners();
+      this.render();
+    } else {
+      this.showLogin();
+    }
+  }
+
+  private setupLoginForm(): void {
+    const loginForm = document.getElementById('loginForm') as HTMLFormElement;
+    loginForm?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const passwordInput = document.getElementById('loginPassword') as HTMLInputElement;
+      const password = passwordInput.value;
+      
+      if (password === ADMIN_PASSWORD) {
+        this.isAuthenticated = true;
+        sessionStorage.setItem('isAuthenticated', 'true');
+        this.showApp();
+        this.initializeFirebase();
+        this.setupEventListeners();
+        this.render();
+        passwordInput.value = '';
+      } else {
+        const errorMsg = document.getElementById('loginError');
+        if (errorMsg) {
+          errorMsg.style.display = 'block';
+          setTimeout(() => {
+            errorMsg.style.display = 'none';
+          }, 3000);
+        }
+        passwordInput.value = '';
+      }
+    });
+  }
+
+  private showLogin(): void {
+    const loginScreen = document.getElementById('loginScreen');
+    const app = document.getElementById('app');
+    if (loginScreen) loginScreen.style.display = 'flex';
+    if (app) app.style.display = 'none';
+  }
+
+  private showApp(): void {
+    const loginScreen = document.getElementById('loginScreen');
+    const app = document.getElementById('app');
+    if (loginScreen) loginScreen.style.display = 'none';
+    if (app) app.style.display = 'block';
+  }
+
+  private logout(): void {
+    this.isAuthenticated = false;
+    sessionStorage.removeItem('isAuthenticated');
+    this.showLogin();
   }
 
   private checkAuthentication(): void {
@@ -94,6 +150,14 @@ class RecipeManager {
   }
 
   private setupEventListeners(): void {
+    // Logout button
+    const logoutBtn = document.getElementById('logoutBtn');
+    logoutBtn?.addEventListener('click', () => {
+      if (confirm('Are you sure you want to logout?')) {
+        this.logout();
+      }
+    });
+
     // Add recipe form
     const recipeForm = document.getElementById('recipeForm') as HTMLFormElement;
     recipeForm?.addEventListener('submit', async (e) => {
@@ -113,6 +177,16 @@ class RecipeManager {
       if (e.key === 'Enter') {
         this.addAllergyFilter();
       }
+    });
+
+    // Collapse buttons
+    document.querySelectorAll('.collapse-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = (e.target as HTMLElement).getAttribute('data-target');
+        if (target) {
+          this.toggleCollapse(target, e.target as HTMLElement);
+        }
+      });
     });
 
     // Export recipes
@@ -230,6 +304,21 @@ class RecipeManager {
   private removeAllergyFilter(allergen: string): void {
     this.allergyFilters.delete(allergen);
     this.render();
+  }
+
+  private toggleCollapse(targetId: string, button: HTMLElement): void {
+    const target = document.getElementById(targetId);
+    if (!target) return;
+
+    const isCollapsed = target.classList.contains('collapsed');
+    
+    if (isCollapsed) {
+      target.classList.remove('collapsed');
+      button.textContent = '▼';
+    } else {
+      target.classList.add('collapsed');
+      button.textContent = '▶';
+    }
   }
 
   private async deleteRecipe(id: string): Promise<void> {

@@ -648,8 +648,8 @@ h2 {
 }
 
 .collapsible-content {
-  max-height: 5000px;
-  overflow: hidden;
+  max-height: none;
+  overflow: visible;
   transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
   opacity: 1;
 }
@@ -658,6 +658,7 @@ h2 {
   max-height: 0;
   opacity: 0;
   margin-top: 0 !important;
+  overflow: hidden;
 }
 
 .export-import-buttons {

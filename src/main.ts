@@ -1,6 +1,9 @@
 import './style.css'
 import { initFirebase, saveRecipesToFirebase, listenToRecipes, saveDishesToFirebase, listenToDishes } from './firebase'
 
+// Configure your password here
+const ADMIN_PASSWORD = 'admin123'; // Change this to your desired password
+
 interface Recipe {
   id: string;
   name: string;
@@ -21,12 +24,36 @@ class RecipeManager {
   private dishes: Dish[] = [];
   private allergyFilters: Set<string> = new Set();
   private useFirebase: boolean = false;
+  private isAuthenticated: boolean = false;
 
   constructor() {
     this.loadFromStorage();
+    this.checkAuthentication();
     this.initializeFirebase();
     this.setupEventListeners();
     this.render();
+  }
+
+  private checkAuthentication(): void {
+    // Check if user is authenticated in this session
+    const sessionAuth = sessionStorage.getItem('isAuthenticated');
+    this.isAuthenticated = sessionAuth === 'true';
+  }
+
+  private async authenticate(): Promise<boolean> {
+    if (this.isAuthenticated) return true;
+
+    const password = prompt('Enter password to modify recipes/dishes:');
+    
+    if (password === ADMIN_PASSWORD) {
+      this.isAuthenticated = true;
+      sessionStorage.setItem('isAuthenticated', 'true');
+      return true;
+    } else if (password !== null) {
+      alert('Incorrect password!');
+    }
+    
+    return false;
   }
 
   private initializeFirebase(): void {
@@ -69,9 +96,9 @@ class RecipeManager {
   private setupEventListeners(): void {
     // Add recipe form
     const recipeForm = document.getElementById('recipeForm') as HTMLFormElement;
-    recipeForm?.addEventListener('submit', (e) => {
+    recipeForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      this.addRecipe();
+      await this.addRecipe();
     });
 
     // Add allergy filter
@@ -111,13 +138,15 @@ class RecipeManager {
 
     // Dish form
     const dishForm = document.getElementById('dishForm') as HTMLFormElement;
-    dishForm?.addEventListener('submit', (e) => {
+    dishForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      this.addDish();
+      await this.addDish();
     });
   }
 
-  private addRecipe(): void {
+  private async addRecipe(): Promise<void> {
+    if (!await this.authenticate()) return;
+
     const nameInput = document.getElementById('recipeName') as HTMLInputElement;
     const ingredientsInput = document.getElementById('recipeIngredients') as HTMLTextAreaElement;
     const instructionsInput = document.getElementById('recipeInstructions') as HTMLTextAreaElement;
@@ -150,7 +179,9 @@ class RecipeManager {
     instructionsInput.value = '';
   }
 
-  private addDish(): void {
+  private async addDish(): Promise<void> {
+    if (!await this.authenticate()) return;
+
     const nameInput = document.getElementById('dishName') as HTMLInputElement;
     const notesInput = document.getElementById('dishNotes') as HTMLTextAreaElement;
     
@@ -201,13 +232,17 @@ class RecipeManager {
     this.render();
   }
 
-  private deleteRecipe(id: string): void {
+  private async deleteRecipe(id: string): Promise<void> {
+    if (!await this.authenticate()) return;
+
     this.recipes = this.recipes.filter(recipe => recipe.id !== id);
     this.saveToStorage();
     this.render();
   }
 
-  private deleteDish(id: string): void {
+  private async deleteDish(id: string): Promise<void> {
+    if (!await this.authenticate()) return;
+
     this.dishes = this.dishes.filter(dish => dish.id !== id);
     this.saveToStorage();
     this.render();
@@ -426,9 +461,9 @@ class RecipeManager {
     `;
 
     const deleteBtn = card.querySelector('.delete-btn');
-    deleteBtn?.addEventListener('click', () => {
+    deleteBtn?.addEventListener('click', async () => {
       if (confirm(`Delete dish "${dish.name}"?`)) {
-        this.deleteDish(dish.id);
+        await this.deleteDish(dish.id);
       }
     });
 
@@ -501,9 +536,9 @@ class RecipeManager {
     `;
 
     const deleteBtn = card.querySelector('.delete-btn');
-    deleteBtn?.addEventListener('click', () => {
+    deleteBtn?.addEventListener('click', async () => {
       if (confirm(`Delete recipe "${recipe.name}"?`)) {
-        this.deleteRecipe(recipe.id);
+        await this.deleteRecipe(recipe.id);
       }
     });
 

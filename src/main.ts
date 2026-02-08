@@ -1,5 +1,5 @@
 import './style.css'
-import { initFirebase, saveRecipesToFirebase, listenToRecipes, saveDishesToFirebase, listenToDishes } from './firebase'
+import { initFirebase, saveRecipesToFirebase, listenToRecipes, saveDishesToFirebase, listenToDishes, saveMasterIngredientsToFirebase, listenToMasterIngredients } from './firebase'
 
 // Configure your passwords here
 const ADMIN_PASSWORD = 'quan2018'; // Full access - can add/edit/delete
@@ -162,12 +162,24 @@ class RecipeManager {
         }
       });
 
+      // Listen for master ingredients changes from Firebase
+      listenToMasterIngredients((firebaseIngredients) => {
+        if (Array.isArray(firebaseIngredients)) {
+          this.masterIngredients = firebaseIngredients;
+          localStorage.setItem('masterIngredients', JSON.stringify(this.masterIngredients)); // Save to localStorage without triggering Firebase
+          this.render();
+        }
+      });
+
       // Upload current data to Firebase
       if (this.recipes.length > 0) {
         saveRecipesToFirebase(this.recipes);
       }
       if (this.dishes.length > 0) {
         saveDishesToFirebase(this.dishes);
+      }
+      if (this.masterIngredients.length > 0) {
+        saveMasterIngredientsToFirebase(this.masterIngredients);
       }
     } else {
       console.log('📦 Using localStorage only');
@@ -857,6 +869,7 @@ class RecipeManager {
     if (this.useFirebase) {
       saveRecipesToFirebase(this.recipes);
       saveDishesToFirebase(this.dishes);
+      saveMasterIngredientsToFirebase(this.masterIngredients);
     }
     
     this.showSaveIndicator();

@@ -74,6 +74,27 @@ export function listenToDishes(callback: (dishes: any[]) => void): void {
   });
 }
 
+export function saveMasterIngredientsToFirebase(ingredients: string[]): void {
+  if (!database) return;
+  
+  try {
+    const ingredientsRef = ref(database, 'masterIngredients');
+    set(ingredientsRef, ingredients);
+  } catch (error) {
+    console.error('Error saving master ingredients to Firebase:', error);
+  }
+}
+
+export function listenToMasterIngredients(callback: (ingredients: string[]) => void): void {
+  if (!database) return;
+  
+  const ingredientsRef = ref(database, 'masterIngredients');
+  onValue(ingredientsRef, (snapshot) => {
+    const data = snapshot.val();
+    callback(data || []);
+  });
+}
+
 export function getDatabase() {
   return database;
 }

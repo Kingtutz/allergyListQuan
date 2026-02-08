@@ -2,8 +2,8 @@ import './style.css'
 import { initFirebase, saveRecipesToFirebase, listenToRecipes, saveDishesToFirebase, listenToDishes } from './firebase'
 
 // Configure your passwords here
-const ADMIN_PASSWORD = 'admin123'; // Full access - can add/edit/delete
-const READONLY_PASSWORD = 'view123'; // Read-only - can only view
+const ADMIN_PASSWORD = 'quan2018'; // Full access - can add/edit/delete
+const READONLY_PASSWORD = 'staff123'; // Read-only - can only view
 
 type AccessLevel = 'none' | 'readonly' | 'admin';
 

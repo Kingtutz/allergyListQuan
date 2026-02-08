@@ -51,7 +51,7 @@ export function listenToRecipes(callback: (recipes: any[]) => void): void {
     const data = snapshot.val();
     callback(data || []);
   });
-}
+} 
 
 export function saveDishesToFirebase(dishes: any[]): void {
   if (!database) return;

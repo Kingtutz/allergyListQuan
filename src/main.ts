@@ -1,8 +1,11 @@
 import './style.css'
 import { initFirebase, saveRecipesToFirebase, listenToRecipes, saveDishesToFirebase, listenToDishes } from './firebase'
 
-// Configure your password here
-const ADMIN_PASSWORD = 'admin123'; // Change this to your desired password
+// Configure your passwords here
+const ADMIN_PASSWORD = 'admin123'; // Full access - can add/edit/delete
+const READONLY_PASSWORD = 'view123'; // Read-only - can only view
+
+type AccessLevel = 'none' | 'readonly' | 'admin';
 
 interface Recipe {
   id: string;
@@ -25,6 +28,7 @@ class RecipeManager {
   private allergyFilters: Set<string> = new Set();
   private useFirebase: boolean = false;
   private isAuthenticated: boolean = false;
+  private accessLevel: AccessLevel = 'none';
 
   constructor() {
     this.loadFromStorage();
@@ -51,7 +55,19 @@ class RecipeManager {
       
       if (password === ADMIN_PASSWORD) {
         this.isAuthenticated = true;
+        this.accessLevel = 'admin';
         sessionStorage.setItem('isAuthenticated', 'true');
+        sessionStorage.setItem('accessLevel', 'admin');
+        this.showApp();
+        this.initializeFirebase();
+        this.setupEventListeners();
+        this.render();
+        passwordInput.value = '';
+      } else if (password === READONLY_PASSWORD) {
+        this.isAuthenticated = true;
+        this.accessLevel = 'readonly';
+        sessionStorage.setItem('isAuthenticated', 'true');
+        sessionStorage.setItem('accessLevel', 'readonly');
         this.showApp();
         this.initializeFirebase();
         this.setupEventListeners();
@@ -86,24 +102,32 @@ class RecipeManager {
 
   private logout(): void {
     this.isAuthenticated = false;
+    this.accessLevel = 'none';
     sessionStorage.removeItem('isAuthenticated');
+    sessionStorage.removeItem('accessLevel');
     this.showLogin();
   }
 
   private checkAuthentication(): void {
     // Check if user is authenticated in this session
     const sessionAuth = sessionStorage.getItem('isAuthenticated');
+    const sessionAccess = sessionStorage.getItem('accessLevel') as AccessLevel;
     this.isAuthenticated = sessionAuth === 'true';
+    this.accessLevel = sessionAccess || 'none';
   }
 
   private async authenticate(): Promise<boolean> {
-    if (this.isAuthenticated) return true;
+    if (this.accessLevel === 'admin') return true;
+    if (this.accessLevel === 'readonly') {
+      alert('Read-only access. You cannot modify recipes or dishes.');
+      return false;
+    }
 
-    const password = prompt('Enter password to modify recipes/dishes:');
+    const password = prompt('Enter admin password to modify recipes/dishes:');
     
     if (password === ADMIN_PASSWORD) {
-      this.isAuthenticated = true;
-      sessionStorage.setItem('isAuthenticated', 'true');
+      this.accessLevel = 'admin';
+      sessionStorage.setItem('accessLevel', 'admin');
       return true;
     } else if (password !== null) {
       alert('Incorrect password!');
@@ -121,23 +145,23 @@ class RecipeManager {
       
       // Listen for recipe changes from Firebase
       listenToRecipes((firebaseRecipes) => {
-        if (Array.isArray(firebaseRecipes) && firebaseRecipes.length > 0) {
+        if (Array.isArray(firebaseRecipes)) {
           this.recipes = firebaseRecipes;
-          this.saveToStorage(); // Also keep local backup
+          localStorage.setItem('recipes', JSON.stringify(this.recipes)); // Save to localStorage without triggering Firebase
           this.render();
         }
       });
 
       // Listen for dish changes from Firebase
       listenToDishes((firebaseDishes) => {
-        if (Array.isArray(firebaseDishes) && firebaseDishes.length > 0) {
+        if (Array.isArray(firebaseDishes)) {
           this.dishes = firebaseDishes;
-          this.saveToStorage(); // Also keep local backup
+          localStorage.setItem('dishes', JSON.stringify(this.dishes)); // Save to localStorage without triggering Firebase
           this.render();
         }
       });
 
-      // Upload current data if Firebase is empty
+      // Upload current data to Firebase
       if (this.recipes.length > 0) {
         saveRecipesToFirebase(this.recipes);
       }
@@ -398,6 +422,28 @@ class RecipeManager {
     this.renderRecipeCheckboxes();
     this.renderRecipes();
     this.renderDishes();
+    this.updateUIForAccessLevel();
+  }
+
+  private updateUIForAccessLevel(): void {
+    const isReadOnly = this.accessLevel === 'readonly';
+    
+    // Hide/show forms and buttons based on access level
+    const recipeForm = document.getElementById('recipeForm')?.parentElement;
+    const dishForm = document.getElementById('dishForm')?.parentElement;
+    const exportImportBtns = document.querySelector('.export-import-buttons');
+    
+    if (recipeForm) recipeForm.style.display = isReadOnly ? 'none' : 'block';
+    if (dishForm) dishForm.style.display = isReadOnly ? 'none' : 'block';
+    if (exportImportBtns) (exportImportBtns as HTMLElement).style.display = isReadOnly ? 'none' : 'flex';
+    
+    // Update logout button text
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn && isReadOnly) {
+      logoutBtn.textContent = 'Logout (Read-Only)';
+    } else if (logoutBtn) {
+      logoutBtn.textContent = 'Logout';
+    }
   }
 
   private renderAllergyTags(): void {
@@ -523,11 +569,12 @@ class RecipeManager {
       .filter(r => r !== undefined) as Recipe[];
 
     const matchedAllergens = isHidden ? this.getDishMatchedAllergens(dish) : [];
+    const isReadOnly = this.accessLevel === 'readonly';
 
     card.innerHTML = `
       <div class="recipe-header">
         <h3>🍽️ ${dish.name}</h3>
-        <button class="delete-btn" data-id="${dish.id}">Delete</button>
+        ${!isReadOnly ? `<button class="delete-btn" data-id="${dish.id}">Delete</button>` : ''}
       </div>
       ${isHidden ? `<div class="allergy-warning">⚠️ Contains: ${matchedAllergens.join(', ')}</div>` : ''}
       
@@ -578,11 +625,12 @@ class RecipeManager {
     card.className = `recipe-card ${isHidden ? 'hidden-recipe' : ''}`;
     
     const matchedAllergens = isHidden ? this.getMatchedAllergens(recipe) : [];
+    const isReadOnly = this.accessLevel === 'readonly';
 
     card.innerHTML = `
       <div class="recipe-header">
         <h3>${recipe.name}</h3>
-        <button class="delete-btn" data-id="${recipe.id}">Delete</button>
+        ${!isReadOnly ? `<button class="delete-btn" data-id="${recipe.id}">Delete</button>` : ''}
       </div>
       ${isHidden ? `<div class="allergy-warning">⚠️ Contains: ${matchedAllergens.join(', ')}</div>` : ''}
       
@@ -593,21 +641,23 @@ class RecipeManager {
             ? recipe.allergies.map(allergy => `
               <span class="allergy-tag">
                 ${allergy}
-                <button class="remove-allergy-tag" data-recipe-id="${recipe.id}" data-allergy="${allergy}">×</button>
+                ${!isReadOnly ? `<button class="remove-allergy-tag" data-recipe-id="${recipe.id}" data-allergy="${allergy}">×</button>` : ''}
               </span>
             `).join('')
             : '<span class="no-allergies">None</span>'
           }
         </div>
-        <div class="add-allergy-input">
-          <input 
-            type="text" 
-            class="allergy-input" 
-            data-recipe-id="${recipe.id}"
-            placeholder="Add allergy tag"
-          />
-          <button class="add-allergy-btn" data-recipe-id="${recipe.id}">+</button>
-        </div>
+        ${!isReadOnly ? `
+          <div class="add-allergy-input">
+            <input 
+              type="text" 
+              class="allergy-input" 
+              data-recipe-id="${recipe.id}"
+              placeholder="Add allergy tag"
+            />
+            <button class="add-allergy-btn" data-recipe-id="${recipe.id}">+</button>
+          </div>
+        ` : ''}
       </div>
 
       <div class="recipe-ingredients">

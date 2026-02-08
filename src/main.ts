@@ -432,10 +432,12 @@ class RecipeManager {
     const recipeForm = document.getElementById('recipeForm')?.parentElement;
     const dishForm = document.getElementById('dishForm')?.parentElement;
     const exportImportBtns = document.querySelector('.export-import-buttons');
+    const recipeSection = document.querySelector('.recipe-list-section');
     
     if (recipeForm) recipeForm.style.display = isReadOnly ? 'none' : 'block';
     if (dishForm) dishForm.style.display = isReadOnly ? 'none' : 'block';
     if (exportImportBtns) (exportImportBtns as HTMLElement).style.display = isReadOnly ? 'none' : 'flex';
+    if (recipeSection) (recipeSection as HTMLElement).style.display = isReadOnly ? 'none' : 'block';
     
     // Update logout button text
     const logoutBtn = document.getElementById('logoutBtn');

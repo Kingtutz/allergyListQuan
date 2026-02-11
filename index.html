@@ -78,53 +78,83 @@
 
         <!-- Add Recipe Section -->
         <section class="add-recipe-section">
-          <h2>Add New Recipe</h2>
-          <form id="recipeForm">
-            <input
-              type="text"
-              id="recipeName"
-              placeholder="Recipe name"
-              required
-            />
-            <div class="ingredient-selector-section">
-              <label>Select from master list:</label>
-              <div id="ingredientCheckboxes" class="checkbox-grid"></div>
-            </div>
-            <textarea
-              id="recipeIngredients"
-              placeholder="Or type additional ingredients (comma separated)"
-              rows="3"
-            ></textarea>
-            <textarea
-              id="recipeInstructions"
-              placeholder="Instructions (optional)"
-              rows="4"
-            ></textarea>
-            <button type="submit">Add Recipe</button>
-          </form>
+          <div class="collapsible-header">
+            <h2>Add New Recipe</h2>
+            <button class="collapse-btn" data-target="addRecipeContent">
+              ▼
+            </button>
+          </div>
+          <div id="addRecipeContent" class="collapsible-content">
+            <form id="recipeForm">
+              <input
+                type="text"
+                id="recipeName"
+                placeholder="Recipe name"
+                required
+              />
+              <div class="ingredient-selector-section">
+                <label>Select from master list:</label>
+                <div id="ingredientCheckboxes" class="checkbox-grid"></div>
+              </div>
+              <textarea
+                id="recipeIngredients"
+                placeholder="Or type additional ingredients (comma separated)"
+                rows="3"
+              ></textarea>
+              <textarea
+                id="recipeInstructions"
+                placeholder="Instructions (optional)"
+                rows="4"
+              ></textarea>
+              <button type="submit">Add Recipe</button>
+            </form>
+          </div>
         </section>
 
         <!-- Add Dish Section -->
         <section class="add-dish-section">
-          <h2>Create Dish from Recipes</h2>
-          <form id="dishForm">
-            <input
-              type="text"
-              id="dishName"
-              placeholder="Dish name (e.g., Korean BBQ Bao)"
-              required
-            />
-            <div class="recipe-selector">
-              <label>Select recipes for this dish:</label>
-              <div id="recipeCheckboxes" class="checkbox-grid"></div>
-            </div>
-            <textarea
-              id="dishNotes"
-              placeholder="Notes (optional)"
-              rows="2"
-            ></textarea>
-            <button type="submit">Create Dish</button>
-          </form>
+          <div class="collapsible-header">
+            <h2>Create Dish from Recipes</h2>
+            <button class="collapse-btn" data-target="addDishContent">▼</button>
+          </div>
+          <div id="addDishContent" class="collapsible-content">
+            <form id="dishForm">
+              <input
+                type="text"
+                id="dishName"
+                placeholder="Dish name (e.g., Korean BBQ Bao)"
+                required
+              />
+              <div class="dish-category-row">
+                <label for="dishCategory">Category:</label>
+                <select id="dishCategory">
+                  <option value="lunch">Lunch</option>
+                  <option value="cold">Cold dishes</option>
+                  <option value="hot">Hot dishes</option>
+                  <option value="dessert">Desserts</option>
+                </select>
+              </div>
+              <div class="recipe-selector">
+                <label>Select recipes for this dish:</label>
+                <div id="recipeCheckboxes" class="checkbox-grid"></div>
+              </div>
+              <div class="ingredient-selector-section">
+                <label>Select extra ingredients for this dish:</label>
+                <div id="dishIngredientCheckboxes" class="checkbox-grid"></div>
+              </div>
+              <textarea
+                id="dishIngredients"
+                placeholder="Or type extra ingredients (comma separated)"
+                rows="2"
+              ></textarea>
+              <textarea
+                id="dishNotes"
+                placeholder="Notes (optional)"
+                rows="2"
+              ></textarea>
+              <button type="submit">Create Dish</button>
+            </form>
+          </div>
         </section>
 
         <!-- Dish List Section -->

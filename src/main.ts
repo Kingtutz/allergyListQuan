@@ -6,6 +6,7 @@ const ADMIN_PASSWORD = 'quan2018'; // Full access - can add/edit/delete
 const READONLY_PASSWORD = 'staff123'; // Read-only - can only view
 
 type AccessLevel = 'none' | 'readonly' | 'admin';
+type DishCategory = 'lunch' | 'cold' | 'hot' | 'dessert';
 
 interface Recipe {
   id: string;
@@ -19,6 +20,8 @@ interface Dish {
   id: string;
   name: string;
   recipeIds: string[];
+  ingredients?: string[];
+  category?: DishCategory;
   notes?: string;
 }
 
@@ -283,10 +286,16 @@ class RecipeManager {
 
     if (!name) return;
 
-    // Get selected ingredients from checkboxes
+    // Get selected ingredients from checkboxes (with optional amounts)
     const selectedIngredients = Array.from(
       document.querySelectorAll<HTMLInputElement>('#ingredientCheckboxes input[type="checkbox"]:checked')
-    ).map(cb => cb.value.toLowerCase());
+    ).map(cb => {
+      const row = cb.closest('.ingredient-checkbox-row');
+      const amountInput = row?.querySelector<HTMLInputElement>('.ingredient-amount-input');
+      const amount = amountInput?.value.trim();
+      const baseName = cb.value.toLowerCase();
+      return amount ? `${baseName} — ${amount}` : baseName;
+    });
 
     // Get manual ingredients from textarea
     const manualIngredients = ingredientsText
@@ -317,9 +326,12 @@ class RecipeManager {
     nameInput.value = '';
     ingredientsInput.value = '';
     instructionsInput.value = '';
-    // Uncheck all ingredient checkboxes
+    // Uncheck all ingredient checkboxes and clear amounts
     document.querySelectorAll<HTMLInputElement>('#ingredientCheckboxes input[type="checkbox"]').forEach(cb => {
       cb.checked = false;
+    });
+    document.querySelectorAll<HTMLInputElement>('#ingredientCheckboxes .ingredient-amount-input').forEach(input => {
+      input.value = '';
     });
   }
 
@@ -347,9 +359,13 @@ class RecipeManager {
 
     const nameInput = document.getElementById('dishName') as HTMLInputElement;
     const notesInput = document.getElementById('dishNotes') as HTMLTextAreaElement;
+    const dishIngredientsInput = document.getElementById('dishIngredients') as HTMLTextAreaElement;
+    const dishCategorySelect = document.getElementById('dishCategory') as HTMLSelectElement | null;
     
     const name = nameInput.value.trim();
     const notes = notesInput.value.trim();
+    const extraIngredientsText = dishIngredientsInput?.value.trim() || '';
+    const category = (dishCategorySelect?.value || 'lunch') as DishCategory;
 
     if (!name) return;
 
@@ -362,10 +378,30 @@ class RecipeManager {
       return;
     }
 
+    // Get selected extra ingredients from master list (with optional amounts)
+    const selectedDishIngredients = Array.from(
+      document.querySelectorAll<HTMLInputElement>('#dishIngredientCheckboxes input[type="checkbox"]:checked')
+    ).map(cb => {
+      const row = cb.closest('.ingredient-checkbox-row');
+      const amountInput = row?.querySelector<HTMLInputElement>('.ingredient-amount-input');
+      const amount = amountInput?.value.trim();
+      const baseName = cb.value.toLowerCase();
+      return amount ? `${baseName} — ${amount}` : baseName;
+    });
+
+    const manualDishIngredients = extraIngredientsText
+      .split(',')
+      .map(ing => ing.trim().toLowerCase())
+      .filter(ing => ing.length > 0);
+
+    const extraIngredients = [...new Set([...selectedDishIngredients, ...manualDishIngredients])];
+
     const dish: Dish = {
       id: Date.now().toString(),
       name,
       recipeIds,
+      ingredients: extraIngredients.length > 0 ? extraIngredients : undefined,
+      category,
       notes
     };
 
@@ -376,7 +412,15 @@ class RecipeManager {
     // Clear form
     nameInput.value = '';
     notesInput.value = '';
+    if (dishIngredientsInput) dishIngredientsInput.value = '';
+    if (dishCategorySelect) dishCategorySelect.value = 'lunch';
     checkboxes.forEach(cb => (cb as HTMLInputElement).checked = false);
+    document.querySelectorAll<HTMLInputElement>('#dishIngredientCheckboxes input[type="checkbox"]').forEach(cb => {
+      cb.checked = false;
+    });
+    document.querySelectorAll<HTMLInputElement>('#dishIngredientCheckboxes .ingredient-amount-input').forEach(input => {
+      input.value = '';
+    });
   }
 
   private addAllergyFilter(): void {
@@ -455,10 +499,23 @@ class RecipeManager {
     if (this.allergyFilters.size === 0) return false;
     
     // Check if any recipe in the dish contains an allergen
-    return dish.recipeIds.some(recipeId => {
+    const recipeHasAllergen = dish.recipeIds.some(recipeId => {
       const recipe = this.recipes.find(r => r.id === recipeId);
       return recipe ? this.containsAllergen(recipe) : false;
     });
+
+    if (recipeHasAllergen) return true;
+
+    // Check extra dish ingredients
+    if (dish.ingredients && dish.ingredients.length > 0) {
+      return dish.ingredients.some(ingredient => {
+        return Array.from(this.allergyFilters).some(allergen => {
+          return ingredient.includes(allergen) || allergen.includes(ingredient);
+        });
+      });
+    }
+
+    return false;
   }
 
   private containsAllergen(recipe: Recipe): boolean {
@@ -486,6 +543,7 @@ class RecipeManager {
     this.renderAllergyTags();
     this.renderMasterIngredients();
     this.renderIngredientCheckboxes();
+    this.renderDishIngredientCheckboxes();
     this.renderRecipeCheckboxes();
     this.renderRecipes();
     this.renderDishes();
@@ -532,13 +590,71 @@ class RecipeManager {
     }
 
     this.masterIngredients.forEach(ingredient => {
-      const label = document.createElement('label');
-      label.className = 'ingredient-checkbox-label';
-      label.innerHTML = `
-        <input type="checkbox" value="${ingredient}" />
-        <span>${ingredient}</span>
+      const row = document.createElement('div');
+      row.className = 'ingredient-checkbox-row';
+      row.innerHTML = `
+        <label class="ingredient-checkbox-label">
+          <input type="checkbox" value="${ingredient}" />
+          <span>${ingredient}</span>
+        </label>
+        <input
+          type="text"
+          class="ingredient-amount-input"
+          placeholder="amount (e.g., 2 cups)"
+          data-ingredient="${ingredient}"
+        />
       `;
-      container.appendChild(label);
+
+      const checkbox = row.querySelector('input[type="checkbox"]') as HTMLInputElement | null;
+      const amountInput = row.querySelector('.ingredient-amount-input') as HTMLInputElement | null;
+
+      amountInput?.addEventListener('input', () => {
+        if (checkbox) {
+          checkbox.checked = amountInput.value.trim().length > 0 || checkbox.checked;
+        }
+      });
+
+      container.appendChild(row);
+    });
+  }
+
+  private renderDishIngredientCheckboxes(): void {
+    const container = document.getElementById('dishIngredientCheckboxes');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (this.masterIngredients.length === 0) {
+      container.innerHTML = '<p class="no-ingredients-note">Add ingredients to master list first</p>';
+      return;
+    }
+
+    this.masterIngredients.forEach(ingredient => {
+      const row = document.createElement('div');
+      row.className = 'ingredient-checkbox-row';
+      row.innerHTML = `
+        <label class="ingredient-checkbox-label">
+          <input type="checkbox" value="${ingredient}" />
+          <span>${ingredient}</span>
+        </label>
+        <input
+          type="text"
+          class="ingredient-amount-input"
+          placeholder="amount (e.g., 2 cups)"
+          data-ingredient="${ingredient}"
+        />
+      `;
+
+      const checkbox = row.querySelector('input[type="checkbox"]') as HTMLInputElement | null;
+      const amountInput = row.querySelector('.ingredient-amount-input') as HTMLInputElement | null;
+
+      amountInput?.addEventListener('input', () => {
+        if (checkbox) {
+          checkbox.checked = amountInput.value.trim().length > 0 || checkbox.checked;
+        }
+      });
+
+      container.appendChild(row);
     });
   }
 
@@ -692,9 +808,17 @@ class RecipeManager {
     const matchedAllergens = isHidden ? this.getDishMatchedAllergens(dish) : [];
     const isReadOnly = this.accessLevel === 'readonly';
 
+    const categoryLabel = dish.category
+      ? (dish.category === 'cold' ? 'Cold dishes'
+        : dish.category === 'hot' ? 'Hot dishes'
+        : dish.category === 'dessert' ? 'Desserts'
+        : 'Lunch')
+      : 'Lunch';
+
     card.innerHTML = `
       <div class="recipe-header">
         <h3>🍽️ ${dish.name}</h3>
+        <span class="dish-category-badge">${categoryLabel}</span>
         ${!isReadOnly ? `<button class="delete-btn" data-id="${dish.id}">Delete</button>` : ''}
       </div>
       ${isHidden ? `<div class="allergy-warning">⚠️ Contains: ${matchedAllergens.join(', ')}</div>` : ''}
@@ -708,6 +832,15 @@ class RecipeManager {
           }).join('')}
         </ul>
       </div>
+
+      ${dish.ingredients && dish.ingredients.length > 0 ? `
+        <div class="dish-ingredients">
+          <strong>Extra ingredients:</strong>
+          <ul>
+            ${dish.ingredients.map(ing => `<li>${ing}</li>`).join('')}
+          </ul>
+        </div>
+      ` : ''}
 
       ${dish.notes ? `
         <div class="dish-notes">
@@ -737,6 +870,16 @@ class RecipeManager {
         recipeAllergens.forEach(a => matched.add(a));
       }
     });
+
+    if (dish.ingredients && dish.ingredients.length > 0) {
+      dish.ingredients.forEach(ingredient => {
+        this.allergyFilters.forEach(allergen => {
+          if (ingredient.includes(allergen) || allergen.includes(ingredient)) {
+            matched.add(allergen);
+          }
+        });
+      });
+    }
 
     return Array.from(matched);
   }

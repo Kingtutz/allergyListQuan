@@ -32,6 +32,18 @@
        "recipes": {
          ".read": true,
          ".write": true
+       },
+       "dishes": {
+         ".read": true,
+         ".write": true
+       },
+       "masterIngredients": {
+         ".read": true,
+         ".write": true
+      },
+      "allergenKeywords": {
+        ".read": true,
+        ".write": true
        }
      }
    }
@@ -44,6 +56,18 @@
        "recipes": {
          ".read": "auth != null",
          ".write": "auth != null"
+       },
+       "dishes": {
+         ".read": "auth != null",
+         ".write": "auth != null"
+       },
+       "masterIngredients": {
+         ".read": "auth != null",
+         ".write": "auth != null"
+      },
+      "allergenKeywords": {
+        ".read": "auth != null",
+        ".write": "auth != null"
        }
      }
    }

@@ -1,5 +1,5 @@
 import './style.css'
-import { initFirebase, saveRecipesToFirebase, listenToRecipes, saveDishesToFirebase, listenToDishes, saveMasterIngredientsToFirebase, listenToMasterIngredients } from './firebase'
+import { initFirebase, saveRecipesToFirebase, listenToRecipes, saveDishesToFirebase, listenToDishes, saveMasterIngredientsToFirebase, listenToMasterIngredients, saveAllergenKeywordsToFirebase, listenToAllergenKeywords } from './firebase'
 
 // Configure your passwords here
 const ADMIN_PASSWORD = 'quan2018'; // Full access - can add/edit/delete
@@ -7,6 +7,19 @@ const READONLY_PASSWORD = 'staff123'; // Read-only - can only view
 
 type AccessLevel = 'none' | 'readonly' | 'admin';
 type DishCategory = 'lunch' | 'cold' | 'hot' | 'dessert';
+type AllergenKeywords = Record<string, string[]>;
+
+const DEFAULT_ALLERGEN_KEYWORDS: AllergenKeywords = {
+  lactose: ['lactose', 'milk', 'cream'],
+  dairy: ['milk', 'butter', 'cheese'],
+  gluten: ['flour', 'panko', 'mjol', 'mjöl', 'bovete'],
+  peanuts: ['peanut', 'peanuts'],
+  nuts: ['nut', 'nuts', 'almond', 'cashew', 'walnut', 'pecan', 'hazelnut'],
+  soy: ['soy', 'soya', 'tofu', 'edamame'],
+  shellfish: ['shrimp', 'prawn', 'crab', 'lobster', 'clam', 'mussel', 'oyster'],
+  fish: ['fish', 'salmon', 'tuna', 'cod', 'anchovy'],
+  egg: ['egg', 'eggs', 'mayonnaise']
+};
 
 interface Recipe {
   id: string;
@@ -21,6 +34,7 @@ interface Dish {
   name: string;
   recipeIds: string[];
   ingredients?: string[];
+  allergies?: string[];
   category?: DishCategory;
   notes?: string;
 }
@@ -29,6 +43,7 @@ class RecipeManager {
   private recipes: Recipe[] = [];
   private dishes: Dish[] = [];
   private masterIngredients: string[] = [];
+  private allergenKeywords: AllergenKeywords = { ...DEFAULT_ALLERGEN_KEYWORDS };
   private allergyFilters: Set<string> = new Set();
   private useFirebase: boolean = false;
   private isAuthenticated: boolean = false;
@@ -151,7 +166,12 @@ class RecipeManager {
       listenToRecipes((firebaseRecipes) => {
         if (Array.isArray(firebaseRecipes)) {
           this.recipes = firebaseRecipes;
-          localStorage.setItem('recipes', JSON.stringify(this.recipes)); // Save to localStorage without triggering Firebase
+          const changed = this.applyAutoAllergensToRecipes(this.recipes);
+          if (changed) {
+            this.saveToStorage();
+          } else {
+            localStorage.setItem('recipes', JSON.stringify(this.recipes)); // Save to localStorage without triggering Firebase
+          }
           this.render();
         }
       });
@@ -174,6 +194,17 @@ class RecipeManager {
         }
       });
 
+      // Listen for allergen keyword changes from Firebase
+      listenToAllergenKeywords((firebaseKeywords) => {
+        this.allergenKeywords = this.normalizeAllergenKeywords(firebaseKeywords);
+        localStorage.setItem('allergenKeywords', JSON.stringify(this.allergenKeywords));
+
+        if (this.applyAutoAllergensToRecipes(this.recipes)) {
+          this.saveToStorage();
+        }
+        this.render();
+      });
+
       // Upload current data to Firebase
       if (this.recipes.length > 0) {
         saveRecipesToFirebase(this.recipes);
@@ -183,6 +214,9 @@ class RecipeManager {
       }
       if (this.masterIngredients.length > 0) {
         saveMasterIngredientsToFirebase(this.masterIngredients);
+      }
+      if (Object.keys(this.allergenKeywords).length > 0) {
+        saveAllergenKeywordsToFirebase(this.allergenKeywords);
       }
     } else {
       console.log('📦 Using localStorage only');
@@ -318,6 +352,8 @@ class RecipeManager {
       instructions
     };
 
+    recipe.allergies = this.mergeAllergies(recipe.allergies ?? [], this.detectAllergensFromIngredients(allIngredients));
+
     this.recipes.push(recipe);
     this.saveToStorage();
     this.render();
@@ -400,7 +436,8 @@ class RecipeManager {
       id: Date.now().toString(),
       name,
       recipeIds,
-      ingredients: extraIngredients.length > 0 ? extraIngredients : undefined,
+      ingredients: extraIngredients.length > 0 ? extraIngredients : [],
+      allergies: [],
       category,
       notes
     };
@@ -495,8 +532,106 @@ class RecipeManager {
     this.render();
   }
 
+  private normalizeAllergenKeywords(raw: Record<string, string[]> | null | undefined): AllergenKeywords {
+    const normalized: AllergenKeywords = { ...DEFAULT_ALLERGEN_KEYWORDS };
+    if (!raw || typeof raw !== 'object') return normalized;
+
+    Object.entries(raw).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        normalized[key.toLowerCase()] = value
+          .map(keyword => keyword.trim().toLowerCase())
+          .filter(keyword => keyword.length > 0);
+      }
+    });
+
+    return normalized;
+  }
+
+  private mergeAllergies(existing: string[], detected: string[]): string[] {
+    const seen = new Set<string>();
+    const merged: string[] = [];
+    const add = (value: string) => {
+      const normalized = value.trim().toLowerCase();
+      if (!normalized || seen.has(normalized)) return;
+      seen.add(normalized);
+      merged.push(normalized);
+    };
+
+    existing.forEach(add);
+    detected.forEach(add);
+
+    return merged;
+  }
+
+  private detectAllergensFromIngredients(ingredients: string[]): string[] {
+    const found = new Set<string>();
+
+    ingredients.forEach(ingredient => {
+      const lower = ingredient.toLowerCase();
+      Object.entries(this.allergenKeywords).forEach(([allergen, keywords]) => {
+        if (keywords.some(keyword => lower.includes(keyword))) {
+          found.add(allergen);
+        }
+      });
+    });
+
+    return Array.from(found);
+  }
+
+  private applyAutoAllergensToRecipes(recipes: Recipe[]): boolean {
+    let changed = false;
+
+    recipes.forEach(recipe => {
+      const detected = this.detectAllergensFromIngredients(recipe.ingredients);
+      const current = this.mergeAllergies(recipe.allergies ?? [], []);
+      const merged = this.mergeAllergies(current, detected);
+
+      if (current.length !== merged.length || current.some((value, index) => value !== merged[index])) {
+        recipe.allergies = merged;
+        changed = true;
+      }
+    });
+
+    return changed;
+  }
+
+  private addAllergyToDish(dishId: string, allergy: string): void {
+    const dish = this.dishes.find(d => d.id === dishId);
+    if (!dish) return;
+
+    if (!dish.allergies) {
+      dish.allergies = [];
+    }
+
+    const allergyLower = allergy.trim().toLowerCase();
+    if (allergyLower && !dish.allergies.some(a => a.toLowerCase() === allergyLower)) {
+      dish.allergies.push(allergyLower);
+      this.saveToStorage();
+      this.render();
+    }
+  }
+
+  private removeAllergyFromDish(dishId: string, allergy: string): void {
+    const dish = this.dishes.find(d => d.id === dishId);
+    if (!dish || !dish.allergies) return;
+
+    dish.allergies = dish.allergies.filter(a => a.toLowerCase() !== allergy.toLowerCase());
+    this.saveToStorage();
+    this.render();
+  }
+
   private dishContainsAllergen(dish: Dish): boolean {
     if (this.allergyFilters.size === 0) return false;
+
+    // Check explicit dish allergies first
+    if (dish.allergies && dish.allergies.length > 0) {
+      const hasExplicitAllergen = dish.allergies.some(allergy => {
+        return Array.from(this.allergyFilters).some(allergen => {
+          return allergy.toLowerCase().includes(allergen) || allergen.includes(allergy.toLowerCase());
+        });
+      });
+      if (hasExplicitAllergen) return true;
+    }
     
     // Check if any recipe in the dish contains an allergen
     const recipeHasAllergen = dish.recipeIds.some(recipeId => {
@@ -662,14 +797,14 @@ class RecipeManager {
     const isReadOnly = this.accessLevel === 'readonly';
     
     // Hide/show forms and buttons based on access level
-    const recipeForm = document.getElementById('recipeForm')?.parentElement;
-    const dishForm = document.getElementById('dishForm')?.parentElement;
+    const addRecipeSection = document.querySelector('.add-recipe-section');
+    const addDishSection = document.querySelector('.add-dish-section');
     const exportImportBtns = document.querySelector('.export-import-buttons');
     const recipeSection = document.querySelector('.recipe-list-section');
     const ingredientSection = document.querySelector('.ingredient-manager-section');
     
-    if (recipeForm) recipeForm.style.display = isReadOnly ? 'none' : 'block';
-    if (dishForm) dishForm.style.display = isReadOnly ? 'none' : 'block';
+    if (addRecipeSection) (addRecipeSection as HTMLElement).style.display = isReadOnly ? 'none' : 'block';
+    if (addDishSection) (addDishSection as HTMLElement).style.display = isReadOnly ? 'none' : 'block';
     if (exportImportBtns) (exportImportBtns as HTMLElement).style.display = isReadOnly ? 'none' : 'flex';
     if (recipeSection) (recipeSection as HTMLElement).style.display = isReadOnly ? 'none' : 'block';
     if (ingredientSection) (ingredientSection as HTMLElement).style.display = isReadOnly ? 'none' : 'block';
@@ -799,7 +934,7 @@ class RecipeManager {
 
   private createDishCard(dish: Dish, isHidden: boolean): HTMLElement {
     const card = document.createElement('div');
-    card.className = `recipe-card dish-card ${isHidden ? 'hidden-recipe' : ''}`;
+    card.className = `recipe-card dish-card collapsed ${isHidden ? 'hidden-recipe' : ''}`;
 
     const dishRecipes = dish.recipeIds
       .map(id => this.recipes.find(r => r.id === id))
@@ -817,38 +952,102 @@ class RecipeManager {
 
     card.innerHTML = `
       <div class="recipe-header">
+        <button class="dish-toggle" type="button" aria-expanded="false">▶</button>
         <h3>🍽️ ${dish.name}</h3>
         <span class="dish-category-badge">${categoryLabel}</span>
         ${!isReadOnly ? `<button class="delete-btn" data-id="${dish.id}">Delete</button>` : ''}
       </div>
-      ${isHidden ? `<div class="allergy-warning">⚠️ Contains: ${matchedAllergens.join(', ')}</div>` : ''}
-      
-      <div class="dish-recipes">
-        <strong>Recipes used:</strong>
-        <ul>
-          ${dishRecipes.map(recipe => {
-            const hasAllergen = this.containsAllergen(recipe);
-            return `<li class="${hasAllergen ? 'allergen-recipe' : ''}">${recipe.name}${hasAllergen ? ' ⚠️' : ''}</li>`;
-          }).join('')}
-        </ul>
-      </div>
+      <div class="dish-details">
+        ${isHidden ? `<div class="allergy-warning">⚠️ Contains: ${matchedAllergens.join(', ')}</div>` : ''}
 
-      ${dish.ingredients && dish.ingredients.length > 0 ? `
-        <div class="dish-ingredients">
-          <strong>Extra ingredients:</strong>
+        <div class="dish-allergies-section">
+          <strong>Allergy Tags:</strong>
+          <div class="dish-allergy-tags">
+            ${dish.allergies && dish.allergies.length > 0
+              ? dish.allergies.map(allergy => `
+                <span class="allergy-tag">
+                  ${allergy}
+                  ${!isReadOnly ? `<button class="remove-allergy-tag" data-dish-id="${dish.id}" data-allergy="${allergy}">×</button>` : ''}
+                </span>
+              `).join('')
+              : '<span class="no-allergies">None</span>'
+            }
+          </div>
+          ${!isReadOnly ? `
+            <div class="add-allergy-input">
+              <input
+                type="text"
+                class="dish-allergy-input"
+                data-dish-id="${dish.id}"
+                placeholder="Add allergy tag"
+              />
+              <button class="dish-add-allergy-btn" data-dish-id="${dish.id}">+</button>
+            </div>
+          ` : ''}
+        </div>
+        
+        <div class="dish-recipes">
+          <strong>Recipes used:</strong>
           <ul>
-            ${dish.ingredients.map(ing => `<li>${ing}</li>`).join('')}
+            ${dishRecipes.map(recipe => {
+              const hasAllergen = this.containsAllergen(recipe);
+              return `<li class="${hasAllergen ? 'allergen-recipe' : ''}">${recipe.name}${hasAllergen ? ' ⚠️' : ''}</li>`;
+            }).join('')}
           </ul>
         </div>
-      ` : ''}
 
-      ${dish.notes ? `
-        <div class="dish-notes">
-          <strong>Notes:</strong>
-          <p>${dish.notes}</p>
-        </div>
-      ` : ''}
+        ${dish.ingredients && dish.ingredients.length > 0 ? `
+          <div class="dish-ingredients">
+            <strong>Extra ingredients:</strong>
+            <ul>
+              ${dish.ingredients.map(ing => `<li>${ing}</li>`).join('')}
+            </ul>
+          </div>
+        ` : ''}
+
+        ${dish.notes ? `
+          <div class="dish-notes">
+            <strong>Notes:</strong>
+            <p>${dish.notes}</p>
+          </div>
+        ` : ''}
+      </div>
     `;
+
+    const toggleBtn = card.querySelector('.dish-toggle') as HTMLButtonElement | null;
+    toggleBtn?.addEventListener('click', () => {
+      const isCollapsed = card.classList.toggle('collapsed');
+      toggleBtn.textContent = isCollapsed ? '▶' : '▼';
+      toggleBtn.setAttribute('aria-expanded', (!isCollapsed).toString());
+    });
+
+    const addAllergyBtn = card.querySelector('.dish-add-allergy-btn');
+    const allergyInput = card.querySelector('.dish-allergy-input') as HTMLInputElement;
+
+    addAllergyBtn?.addEventListener('click', () => {
+      if (allergyInput.value.trim()) {
+        this.addAllergyToDish(dish.id, allergyInput.value);
+        allergyInput.value = '';
+      }
+    });
+
+    allergyInput?.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && allergyInput.value.trim()) {
+        this.addAllergyToDish(dish.id, allergyInput.value);
+        allergyInput.value = '';
+      }
+    });
+
+    card.querySelectorAll('.remove-allergy-tag').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        const allergyToRemove = target.getAttribute('data-allergy');
+        const dishId = target.getAttribute('data-dish-id');
+        if (allergyToRemove && dishId) {
+          this.removeAllergyFromDish(dishId, allergyToRemove);
+        }
+      });
+    });
 
     const deleteBtn = card.querySelector('.delete-btn');
     deleteBtn?.addEventListener('click', async () => {
@@ -863,6 +1062,17 @@ class RecipeManager {
   private getDishMatchedAllergens(dish: Dish): string[] {
     const matched: Set<string> = new Set();
     
+    // Check explicit dish allergies
+    if (dish.allergies) {
+      dish.allergies.forEach(allergy => {
+        this.allergyFilters.forEach(allergen => {
+          if (allergy.toLowerCase().includes(allergen) || allergen.includes(allergy.toLowerCase())) {
+            matched.add(allergen);
+          }
+        });
+      });
+    }
+
     dish.recipeIds.forEach(recipeId => {
       const recipe = this.recipes.find(r => r.id === recipeId);
       if (recipe) {
@@ -1007,12 +1217,19 @@ class RecipeManager {
     localStorage.setItem('recipes', JSON.stringify(this.recipes));
     localStorage.setItem('dishes', JSON.stringify(this.dishes));
     localStorage.setItem('masterIngredients', JSON.stringify(this.masterIngredients));
+    localStorage.setItem('allergenKeywords', JSON.stringify(this.allergenKeywords));
     
     // Sync to Firebase if available
     if (this.useFirebase) {
+      const dishesForFirebase = this.dishes.map(dish => ({
+        ...dish,
+        ingredients: dish.ingredients ?? [],
+        allergies: dish.allergies ?? []
+      }));
       saveRecipesToFirebase(this.recipes);
-      saveDishesToFirebase(this.dishes);
+      saveDishesToFirebase(dishesForFirebase);
       saveMasterIngredientsToFirebase(this.masterIngredients);
+      saveAllergenKeywordsToFirebase(this.allergenKeywords);
     }
     
     this.showSaveIndicator();
@@ -1044,6 +1261,20 @@ class RecipeManager {
       } catch (e) {
         console.error('Failed to load master ingredients from storage', e);
       }
+    }
+
+    const storedAllergenKeywords = localStorage.getItem('allergenKeywords');
+    if (storedAllergenKeywords) {
+      try {
+        const parsed = JSON.parse(storedAllergenKeywords) as Record<string, string[]>;
+        this.allergenKeywords = this.normalizeAllergenKeywords(parsed);
+      } catch (e) {
+        console.error('Failed to load allergen keywords from storage', e);
+      }
+    }
+
+    if (this.applyAutoAllergensToRecipes(this.recipes)) {
+      localStorage.setItem('recipes', JSON.stringify(this.recipes));
     }
   }
 

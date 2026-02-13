@@ -397,6 +397,30 @@ h2 {
   font-style: italic;
 }
 
+/* Dish Allergy Tags Section */
+.dish-allergies-section {
+  background: #f3fff7;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #ccefd9;
+}
+
+.dish-allergies-section strong {
+  color: #48bb78;
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.dish-allergy-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+  min-height: 28px;
+}
+
 /* Ingredient Manager Styles */
 .ingredient-manager-section {
   background: white;
@@ -655,6 +679,34 @@ h2 {
 /* Dish Cards */
 .dish-card {
   border-left: 4px solid #48bb78;
+}
+
+.dish-card.collapsed .dish-details {
+  display: none;
+}
+
+.dish-card.collapsed .recipe-header {
+  margin-bottom: 0;
+}
+
+.dish-toggle {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid #d5dbe7;
+  background: #f4f7ff;
+  color: #3f51b5;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.dish-toggle:hover {
+  background: #e7edff;
+  transform: translateY(-1px);
 }
 
 .dish-recipes {

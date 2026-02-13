@@ -34,13 +34,11 @@ export function initFirebase(): Database | null {
 
 export function saveRecipesToFirebase(recipes: any[]): void {
   if (!database) return;
-  
-  try {
-    const recipesRef = ref(database, 'recipes');
-    set(recipesRef, recipes);
-  } catch (error) {
-    console.error('Error saving to Firebase:', error);
-  }
+
+  const recipesRef = ref(database, 'recipes');
+  void set(recipesRef, recipes).catch((error) => {
+    console.error('Error saving recipes to Firebase:', error);
+  });
 }
 
 export function listenToRecipes(callback: (recipes: any[]) => void): void {
@@ -55,13 +53,11 @@ export function listenToRecipes(callback: (recipes: any[]) => void): void {
 
 export function saveDishesToFirebase(dishes: any[]): void {
   if (!database) return;
-  
-  try {
-    const dishesRef = ref(database, 'dishes');
-    set(dishesRef, dishes);
-  } catch (error) {
+
+  const dishesRef = ref(database, 'dishes');
+  void set(dishesRef, dishes).catch((error) => {
     console.error('Error saving dishes to Firebase:', error);
-  }
+  });
 }
 
 export function listenToDishes(callback: (dishes: any[]) => void): void {
@@ -76,13 +72,11 @@ export function listenToDishes(callback: (dishes: any[]) => void): void {
 
 export function saveMasterIngredientsToFirebase(ingredients: string[]): void {
   if (!database) return;
-  
-  try {
-    const ingredientsRef = ref(database, 'masterIngredients');
-    set(ingredientsRef, ingredients);
-  } catch (error) {
+
+  const ingredientsRef = ref(database, 'masterIngredients');
+  void set(ingredientsRef, ingredients).catch((error) => {
     console.error('Error saving master ingredients to Firebase:', error);
-  }
+  });
 }
 
 export function listenToMasterIngredients(callback: (ingredients: string[]) => void): void {
@@ -92,6 +86,25 @@ export function listenToMasterIngredients(callback: (ingredients: string[]) => v
   onValue(ingredientsRef, (snapshot) => {
     const data = snapshot.val();
     callback(data || []);
+  });
+}
+
+export function saveAllergenKeywordsToFirebase(keywords: Record<string, string[]>): void {
+  if (!database) return;
+
+  const keywordsRef = ref(database, 'allergenKeywords');
+  void set(keywordsRef, keywords).catch((error) => {
+    console.error('Error saving allergen keywords to Firebase:', error);
+  });
+}
+
+export function listenToAllergenKeywords(callback: (keywords: Record<string, string[]>) => void): void {
+  if (!database) return;
+
+  const keywordsRef = ref(database, 'allergenKeywords');
+  onValue(keywordsRef, (snapshot) => {
+    const data = snapshot.val();
+    callback(data || {});
   });
 }
 
